@@ -14,6 +14,20 @@ defineProps({
     status: {
         type: String,
     },
+    canLogin: {
+        type: Boolean,
+    },
+    canRegister: {
+        type: Boolean,
+    },
+    laravelVersion: {
+        type: String,
+        required: true,
+    },
+    phpVersion: {
+        type: String,
+        required: true,
+    },
 });
 
 const form = useForm({
@@ -32,6 +46,7 @@ const submit = () => {
 <template>
     <GuestLayout>
         <Head title="Log in" />
+
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
             {{ status }}
@@ -71,7 +86,7 @@ const submit = () => {
 
             <div class="block mt-4">
                 <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
+                    <Checkbox name="remember" v-model="form.remember" />
                     <span class="ms-2 text-sm text-gray-600">Remember me</span>
                 </label>
             </div>
@@ -88,6 +103,13 @@ const submit = () => {
                 <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
                     Log in
                 </PrimaryButton>
+                <Link
+                    :href="route('register')"
+                    class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
+                >
+                    Register
+                </Link>
+
             </div>
         </form>
     </GuestLayout>

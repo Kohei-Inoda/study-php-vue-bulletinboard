@@ -30,9 +30,13 @@ const showingNavigationDropdown = ref(false);
                             <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                    投稿一覧
+                                </NavLink>
+                                <NavLink :href="route('profile.edit')" :active="route().current('profile.edit')">
+                                    プロフィール編集
                                 </NavLink>
                             </div>
+
                         </div>
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
@@ -115,7 +119,11 @@ const showingNavigationDropdown = ref(false);
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('profile.edit')" :active="route().current('profile.edit')">
+                            プロフィール編集
+                        </ResponsiveNavLink>
                     </div>
+
 
                     <!-- Responsive Settings Options -->
                     <div class="pt-4 pb-1 border-t border-gray-200">
