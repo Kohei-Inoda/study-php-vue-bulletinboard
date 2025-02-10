@@ -1,10 +1,19 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
-import { defineProps } from 'vue';
+import { Head, useForm, router, } from '@inertiajs/vue3';
+import { defineProps, ref } from 'vue';
+import Modal from '@/Components/Modal.vue';
+
 
 defineProps({
-    posts: Array, // サーバーから渡された投稿一覧
+    posts: {
+        type: Object,
+        default: () => ({
+            data: [], // 空の配列をデフォルトに
+            prev_page_url: null,
+            next_page_url: null,
+        })
+    }
 });
 
 // フォームの管理
@@ -19,6 +28,27 @@ const submit = () => {
         onSuccess: () => form.reset(),
     });
 };
+
+const goToPage = (url) => {
+    if (url) {
+        router.get(url);
+    };
+};
+
+const isModalOpen = ref(false);
+const selectedPost = ref(null);
+
+const openModal = (post) => {
+    // console.log("post has clicked",post);
+    selectedPost.value = post;
+    isModalOpen.value = true;
+};
+
+const closeModal = () => {
+    isModalOpen.value = false;
+    selectedPost.value = null;
+};
+
 </script>
 
 <template>
@@ -75,15 +105,47 @@ const submit = () => {
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">投稿一覧</h3>
                         <div v-if="posts.length === 0" class="text-gray-500">まだ投稿がありません。</div>
                         <div v-else>
-                            <div v-for="post in posts" :key="post.id" class="border-b border-gray-300 py-4">
+                            <div 
+                                v-for="post in posts.data" 
+                                :key="post?.id" 
+                                class="border-b border-gray-300 py-4 cursor-pointer hover:bg-gray-100 transition"
+                                @click="openModal(post)"
+                            >
                                 <h4 class="text-md font-semibold">{{ post.title }}</h4>
                                 <p class="text-sm text-gray-700">{{ post.body }}</p>
-                                <p class="text-xs text-gray-500 mt-2">投稿者: {{ post.user.name }} | {{ new Date(post.created_at).toLocaleString() }}</p>
+                                <p class="text-xs text-gray-500 mt-2">投稿者: {{ post?.user ? post.user.name : '不明なユーザ' }} | {{ new Date(post?.created_at).toLocaleString() }}</p>
+                            </div>
+
+                            <!-- ページネーション -->
+                            <div class="flex justify-center space-x-2 mt-4">
+                                <!-- 前のページがあれば表示 -->
+                                <button v-if="posts.prev_page_url" @click="goToPage(posts.prev_page_url)" class="bg-gray-200 px-3 py-2 rounded">
+                                    ← 前のページ
+                                </button>
+
+                                <!-- 次のページがあれば表示 -->
+                                <button v-if="posts.next_page_url" @click="goToPage(posts.next_page_url)" class="bg-gray-200 px-3 py-2 rounded">
+                                    次のページ →
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- 投稿の詳細表示 -->
+            <Modal :show="isModalOpen" @close="closeModal">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4">{{ selectedPost?.title }}</h2>
+                    <p class="text-gray-700">{{ selectedPost?.body }}</p>
+                    <p class="text-xs text-gray-500 mt-4">投稿者: {{ selectedPost?.user ? selectedPost.user.name : '不明なユーザ' }} | {{ new Date(selectedPost?.created_at).toLocaleString() }}</p>
+                    <div class="mt-4 text-right">
+                        <button @click="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
+                            閉じる
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     </div>
 </template>
