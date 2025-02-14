@@ -24,6 +24,9 @@ Route::get('/dashboard', function () {
 
 Route::Post('/posts', [PostController::class, 'store'])->name('posts.store');
 
+Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
+
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

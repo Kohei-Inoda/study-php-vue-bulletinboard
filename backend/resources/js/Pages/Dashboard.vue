@@ -53,6 +53,7 @@ const openModal = (post) => {   //モーダルを開く
 const closeModal = () => {  //モーダルを閉じる
     isModalOpen.value = false;
     selectedPost.value = null;
+    isEditing.value = false;
 };
 
 const deletePost = (post) => {
