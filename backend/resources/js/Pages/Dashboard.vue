@@ -1,17 +1,23 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm, router, } from '@inertiajs/vue3';
+import { Head, useForm, router,usePage, } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
 import Modal from '@/Components/Modal.vue';
 
 
-defineProps({
+const props = defineProps({
     posts: {
         type: Object,
         default: () => ({
             data: [], // 空の配列をデフォルトに
             prev_page_url: null,
             next_page_url: null,
+        })
+    },
+    auth:{
+        type: Object,
+        default: () => ({
+            user: null,
         })
     }
 });
@@ -35,19 +41,53 @@ const goToPage = (url) => {
     };
 };
 
-const isModalOpen = ref(false);
+const isModalOpen = ref(false); //モーダルの状態管理
 const selectedPost = ref(null);
 
-const openModal = (post) => {
+const openModal = (post) => {   //モーダルを開く
     // console.log("post has clicked",post);
     selectedPost.value = post;
     isModalOpen.value = true;
 };
 
-const closeModal = () => {
+const closeModal = () => {  //モーダルを閉じる
     isModalOpen.value = false;
     selectedPost.value = null;
 };
+
+const deletePost = (post) => {
+    console.log(selectedPost.value.id);
+    if (confirm('ほんまに消すでー？')) {
+        router.delete(route('posts.destroy', selectedPost.value.id), {
+            onSuccess: () => closeModal(),
+        });
+    }
+};
+
+const startEdit = () => {
+    isEditing.value = true;
+    editForm.title = selectedPost.value.title;
+    editForm.body = selectedPost.value.body;
+};
+
+const updatePost = () => {
+    router.put(route('posts.update', selectedPost.value.id), editForm, {
+        onSuccess: () => {
+            selectedPost.value.title = editForm.title;
+            selectedPost.value.body = editForm.body;
+            isEditing.value = false;
+        },
+    });
+};
+
+const isEditing = ref(false);
+const editForm = useForm({
+    title: '',
+    body: ''
+});
+
+const page = usePage();
+const auth = page.props.auth;
 
 </script>
 
@@ -64,7 +104,7 @@ const closeModal = () => {
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <!-- 投稿フォーム -->
                     <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">新しい投稿</h3>
+                        <!-- <h3 class="text-lg font-semibold text-gray-800 mb-4">新しい投稿</h3> -->
                         <form @submit.prevent="submit">
                             <div class="mb-4">
                                 <label for="title" class="block text-sm font-medium text-gray-700">タイトル</label>
@@ -72,6 +112,7 @@ const closeModal = () => {
                                     id="title"
                                     v-model="form.title"
                                     type="text"
+                                    placeholder="いまどうしてる？"
                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     required
                                 />
@@ -136,9 +177,41 @@ const closeModal = () => {
             <!-- 投稿の詳細表示 -->
             <Modal :show="isModalOpen" @close="closeModal">
                 <div class="p-6">
-                    <h2 class="text-xl font-semibold mb-4">{{ selectedPost?.title }}</h2>
-                    <p class="text-gray-700">{{ selectedPost?.body }}</p>
-                    <p class="text-xs text-gray-500 mt-4">投稿者: {{ selectedPost?.user ? selectedPost.user.name : '不明なユーザ' }} | {{ new Date(selectedPost?.created_at).toLocaleString() }}</p>
+                    <h2 v-if="!isEditing" class="text-xl font-semibold mb-4">{{ selectedPost?.title }}</h2>
+                    <p v-if="!isEditing" class="text-gray-700">{{ selectedPost?.body }}</p>
+                    <!-- 編集フォーム -->
+                    <div v-if="isEditing">
+                        <label class="block text-sm font-medium text-gray-700">タイトル</label>
+                        <input
+                            v-model="editForm.title"
+                            type="text"
+                            class="w-full border rounded p-2 mb-2"
+                        />
+                        <label class="block text-sm font-medium text-gray-700">本文</label>
+                        <textarea
+                            v-model="editForm.body"
+                            class="w-full border rounded p-2 mb-4"
+                        ></textarea>
+                        <button @click="updatePost" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            更新
+                        </button>
+                        <button @click="isEditing = false" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
+                            キャンセル
+                        </button>
+                    </div>
+
+                    <!-- 投稿者にのみ表示 -->
+                    <div v-if="selectedPost?.user_id === auth?.user?.id && !isEditing" class="mt-4 flex justify-end space-x-2">
+                        <button @click="startEdit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-yellow-700">
+                            編集
+                        </button>
+                        <button @click="deletePost(selectedPost.id)" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                            削除
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-4">
+                        投稿者: {{ selectedPost?.user ? selectedPost.user.name : '不明なユーザ' }} | {{ new Date(selectedPost?.created_at).toLocaleString() }}</p>
                     <div class="mt-4 text-right">
                         <button @click="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
                             閉じる

@@ -16,7 +16,10 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    return Inertia::render('Dashboard',[
+        'user' => auth()->user(),
+        'posts' => \App\Models\Post::with('user')->latest()->paginate(10),
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::Post('/posts', [PostController::class, 'store'])->name('posts.store');
@@ -28,5 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PostController::class, 'index'])->name('dashboard');
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
 });
+
+Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
 require __DIR__.'/auth.php';
