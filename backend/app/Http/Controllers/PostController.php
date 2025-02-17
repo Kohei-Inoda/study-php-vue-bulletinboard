@@ -3,19 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Comment;
 use Illuminate\Http\Request;
+use App\Services\GeminiService;
 use Inertia\Inertia;
 
 class PostController extends Controller
 {
+
     public function index()
     {
         $posts = Post::with('user')->latest()->paginate(10);
 
         return Inertia::render('Dashboard', [
             'user' => auth()->user(),
-            'posts' => Post::with('user')->latest()->paginate(10),
+            'posts' => Post::with(['user', 'comments.user'])->latest()->paginate(10),
                 ]);
+    }
+
+    protected $geminiService;
+
+    public function __construct(GeminiService $geminiService)
+    {
+        $this->geminiService = $geminiService;
     }
 
     public function store(Request $request)
@@ -25,13 +35,29 @@ class PostController extends Controller
             'body' => 'required|string',
         ]);
 
-        Post::create([
+        $post = Post::create([
             'user_id' => auth()->id(),
             'title' => $request->title,
             'body' => $request->body,
         ]);
+        // **Gemini AI を使って自動コメントを生成**
+        $generatedComment = $this->geminiService->generateComment($request->body);
 
-        return redirect()->route('dashboard');
+        $comment = null;
+
+        // **AI のコメントを保存**
+        if ($generatedComment) {
+            $comment = Comment::create([
+                'post_id' => $post->id,  // ✅ `$post` をしっかり定義
+                'user_id' => 1, // AIユーザーの ID
+                'body' => $generatedComment,
+            ]);
+        }        
+
+        return response()->json([
+            'post' => $post,
+            'comment' => $comment,
+        ]);
     }
 
     public function destroy(Post $post)
@@ -66,5 +92,14 @@ class PostController extends Controller
     
         return redirect()->route('dashboard')->with('success', '投稿を更新しました');
     }
+
+    public function show(Post $post)
+    {
+    return response()->json([
+        'post' => $post->load('user', 'comments.user')
+    ]);
+    }
+
+    
 
 }
